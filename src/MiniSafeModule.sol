@@ -181,9 +181,14 @@ contract MiniSafeModule is SignatureDecoder {
     /// @param to Address that should receive the tokens.
     /// @param amount Amount that should be transferred.
     /// @param delegate Delegate whose allowance should be updated.
-    function executeAllowanceTransfer(ISafe safe, address token, address payable to, uint96 amount, address delegate)
-        public
-    {
+    function executeAllowanceTransfer(
+        ISafe safe,
+        address token,
+        address payable to,
+        uint96 amount,
+        address delegate,
+        uint8 chain
+    ) public {
         console.log("msg.sender", msg.sender);
         console.log("miniSafeController", miniSafeController);
         require(msg.sender == miniSafeController, "Not authorized"); // Only the minisafe controller can interract here
@@ -235,10 +240,6 @@ contract MiniSafeModule is SignatureDecoder {
         //     // solium-disable-next-line security/no-tx-origin
         //     emit PayAllowanceTransfer(address(safe), delegate, paymentToken, tx.origin, payment);
         // }
-
-        // TODO if using cctp
-        // We go from base to OP mainnet here
-        uint8 chain = 0x2; // OP mainnet
 
         // Transfer token
         transfer(safe, token, to, amount, chain);

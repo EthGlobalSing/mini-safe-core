@@ -25,11 +25,14 @@ contract MiniSafeTest is Test {
         uint8[] memory _cctpSupportedChains = new uint8[](2);
         address[] memory _cctpAddresses = new address[](2);
 
-        _cctpSupportedChains[0] = 0x6;
-        _cctpSupportedChains[1] = 0x2;
+        _cctpSupportedChains[0] = 0x6; // Base
+        _cctpSupportedChains[1] = 0x2; // OP
 
-        _cctpAddresses[0] = 0x1682Ae6375C4E4A97e4B583BC394c861A46D8962;
-        _cctpAddresses[1] = 0x2B4069517957735bE00ceE0fadAE88a26365528f;
+        // _cctpAddresses[0] = 0x1682Ae6375C4E4A97e4B583BC394c861A46D8962;
+        // _cctpAddresses[1] = 0x2B4069517957735bE00ceE0fadAE88a26365528f;
+
+        _cctpAddresses[0] = 0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5; // Base
+        _cctpAddresses[1] = 0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5; // OP
 
         miniSafeModule = new MiniSafeModule(address(miniSafeController.addr), 0x6, _cctpSupportedChains, _cctpAddresses);
         // miniSafeModule.setNumber(0);
@@ -116,9 +119,10 @@ contract MiniSafeTest is Test {
         uint256 safeUsdcBefore = usdc.balanceOf(address(safe));
 
         address payable to = payable(0x1234AA39B223fe8D0A0E5c4f27Ead9083c751234);
+        uint8 toChain = 0x2; // Base sepolia
 
         vm.prank(miniSafeController.addr);
-        miniSafeModule.executeAllowanceTransfer(safe, address(usdc), to, 1, miniSafeController.addr);
+        miniSafeModule.executeAllowanceTransfer(safe, address(usdc), to, 1, miniSafeController.addr, toChain);
 
         uint256 safeUsdcAfter = usdc.balanceOf(address(safe));
 
