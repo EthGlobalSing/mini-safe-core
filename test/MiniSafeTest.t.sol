@@ -18,7 +18,7 @@ contract MiniSafeTest is Test {
     SafeProxyFactory safeProxyFactory = SafeProxyFactory(0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2);
     ISafe singleton = ISafe(0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552);
 
-    address usdc = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    ERC20 usdc = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
 
     function setUp() public {
         console.log("hello");
