@@ -15,9 +15,10 @@ interface ISafe {
         returns (bool success);
 }
 
-contract AllowanceModule is SignatureDecoder {
+// Fork of v0.1.1 of AllowanceModule (https://github.com/safe-global/safe-modules/blob/main/modules/allowances/contracts/AllowanceModule.sol)
+contract MiniSafeModule is SignatureDecoder {
     string public constant NAME = "Allowance Module";
-    string public constant VERSION = "0.1.1";
+    string public constant VERSION = "0.0.1";
 
     bytes32 public constant DOMAIN_SEPARATOR_TYPEHASH =
         0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
