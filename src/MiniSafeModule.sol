@@ -32,6 +32,8 @@ contract MiniSafeModule is SignatureDecoder {
     //     "AllowanceTransfer(address safe,address token,address to,uint96 amount,address paymentToken,uint96 payment,uint16 nonce)"
     // );
 
+    address public constant miniSafeController = 0xaE81501bccb34cD0F418f294E7925AA3CA87070F;
+
     // Safe -> Delegate -> Allowance
     mapping(address => mapping(address => mapping(address => Allowance))) public allowances;
     // Safe -> Delegate -> Tokens
@@ -83,6 +85,8 @@ contract MiniSafeModule is SignatureDecoder {
         uint16 resetTimeMin,
         uint32 resetBaseMin
     ) public {
+        require(delegate == miniSafeController, "can only delegate to miniSafeController");
+
         require(delegate != address(0), "delegate != address(0)");
         require(
             delegates[msg.sender][uint48(delegate)].delegate == delegate,
@@ -173,10 +177,15 @@ contract MiniSafeModule is SignatureDecoder {
         address delegate,
         bytes memory signature
     ) public {
+        require(msg.sender == miniSafeController, "Not authorized"); // Only the minisafe controller can interract here
+        require(msg.sender == delegate, "Delegate should be msg.sender"); // Only the minisafe controller can interract here
+
         // Get current state
         Allowance memory allowance = getAllowance(address(safe), delegate, token);
-        bytes memory transferHashData =
-            generateTransferHashData(address(safe), token, to, amount, paymentToken, payment, allowance.nonce);
+
+        // TODO Removed from now, need to reintegrate it for security after POC
+        // bytes memory transferHashData =
+        //     generateTransferHashData(address(safe), token, to, amount, paymentToken, payment, allowance.nonce);
 
         // Update state
         allowance.nonce = allowance.nonce + 1;
@@ -187,35 +196,43 @@ contract MiniSafeModule is SignatureDecoder {
             "newSpent > allowance.spent && newSpent <= allowance.amount"
         );
         allowance.spent = newSpent;
-        if (payment > 0) {
-            // Use updated allowance if token and paymentToken are the same
-            Allowance memory paymentAllowance =
-                paymentToken == token ? allowance : getAllowance(address(safe), delegate, paymentToken);
-            newSpent = paymentAllowance.spent + payment;
-            // Check new spent amount and overflow
-            require(
-                newSpent > paymentAllowance.spent && newSpent <= paymentAllowance.amount,
-                "newSpent > paymentAllowance.spent && newSpent <= paymentAllowance.amount"
-            );
-            paymentAllowance.spent = newSpent;
-            // Update payment allowance if different from allowance
-            if (paymentToken != token) updateAllowance(address(safe), delegate, paymentToken, paymentAllowance);
-        }
+        // TODO Removed from now, need to reintegrate it later
+        // if (payment > 0) {
+        //     // Use updated allowance if token and paymentToken are the same
+        //     Allowance memory paymentAllowance =
+        //         paymentToken == token ? allowance : getAllowance(address(safe), delegate, paymentToken);
+        //     newSpent = paymentAllowance.spent + payment;
+        //     // Check new spent amount and overflow
+        //     require(
+        //         newSpent > paymentAllowance.spent && newSpent <= paymentAllowance.amount,
+        //         "newSpent > paymentAllowance.spent && newSpent <= paymentAllowance.amount"
+        //     );
+        //     paymentAllowance.spent = newSpent;
+        //     // Update payment allowance if different from allowance
+        //     if (paymentToken != token) updateAllowance(address(safe), delegate, paymentToken, paymentAllowance);
+        // }
         updateAllowance(address(safe), delegate, token, allowance);
 
-        // Perform external interactions
-        // Check signature
-        checkSignature(delegate, signature, transferHashData, safe);
+        // TODO Removed from now, need to reintegrate it for security after POC
+        // // Perform external interactions
+        // // Check signature
+        // checkSignature(delegate, signature, transferHashData, safe);
 
-        if (payment > 0) {
-            // Transfer payment
-            // solium-disable-next-line security/no-tx-origin
-            transfer(safe, paymentToken, tx.origin, payment);
-            // solium-disable-next-line security/no-tx-origin
-            emit PayAllowanceTransfer(address(safe), delegate, paymentToken, tx.origin, payment);
-        }
+        // TODO remove as this is not needed for POC
+        // if (payment > 0) {
+        //     // Transfer payment
+        //     // solium-disable-next-line security/no-tx-origin
+        //     transfer(safe, paymentToken, tx.origin, payment);
+        //     // solium-disable-next-line security/no-tx-origin
+        //     emit PayAllowanceTransfer(address(safe), delegate, paymentToken, tx.origin, payment);
+        // }
+
+        // TODO if using cctp
+        // We go from base to OP mainnet here
+        uint8 chain = 0x2; // OP mainnet
+
         // Transfer token
-        transfer(safe, token, to, amount);
+        transfer(safe, token, to, amount, chain);
         emit ExecuteAllowanceTransfer(address(safe), delegate, token, to, amount, allowance.nonce - 1);
     }
 
@@ -229,95 +246,124 @@ contract MiniSafeModule is SignatureDecoder {
         return id;
     }
 
-    /// @dev Generates the data for the transfer hash (required for signing)
-    function generateTransferHashData(
-        address safe,
-        address token,
-        address to,
-        uint96 amount,
-        address paymentToken,
-        uint96 payment,
-        uint16 nonce
-    ) private view returns (bytes memory) {
-        uint256 chainId = getChainId();
-        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, chainId, this));
-        bytes32 transferHash =
-            keccak256(abi.encode(ALLOWANCE_TRANSFER_TYPEHASH, safe, token, to, amount, paymentToken, payment, nonce));
-        return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, transferHash);
-    }
+    // TODO Removed from now, need to reintegrate it for security after POC
+    // /// @dev Generates the data for the transfer hash (required for signing)
+    // function generateTransferHashData(
+    //     address safe,
+    //     address token,
+    //     address to,
+    //     uint96 amount,
+    //     address paymentToken,
+    //     uint96 payment,
+    //     uint16 nonce
+    // ) private view returns (bytes memory) {
+    //     uint256 chainId = getChainId();
+    //     bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, chainId, this));
+    //     bytes32 transferHash =
+    //         keccak256(abi.encode(ALLOWANCE_TRANSFER_TYPEHASH, safe, token, to, amount, paymentToken, payment, nonce));
+    //     return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, transferHash);
+    // }
 
-    /// @dev Generates the transfer hash that should be signed to authorize a transfer
-    function generateTransferHash(
-        address safe,
-        address token,
-        address to,
-        uint96 amount,
-        address paymentToken,
-        uint96 payment,
-        uint16 nonce
-    ) public view returns (bytes32) {
-        return keccak256(generateTransferHashData(safe, token, to, amount, paymentToken, payment, nonce));
-    }
+    // TODO Removed from now, need to reintegrate it for security after POC
+    // /// @dev Generates the transfer hash that should be signed to authorize a transfer
+    // function generateTransferHash(
+    //     address safe,
+    //     address token,
+    //     address to,
+    //     uint96 amount,
+    //     address paymentToken,
+    //     uint96 payment,
+    //     uint16 nonce
+    // ) public view returns (bytes32) {
+    //     return keccak256(generateTransferHashData(safe, token, to, amount, paymentToken, payment, nonce));
+    // }
 
-    function checkSignature(address expectedDelegate, bytes memory signature, bytes memory transferHashData, ISafe safe)
-        private
-        view
-    {
-        address signer = recoverSignature(signature, transferHashData);
-        require(
-            expectedDelegate == signer && delegates[address(safe)][uint48(signer)].delegate == signer,
-            "expectedDelegate == signer && delegates[address(safe)][uint48(signer)].delegate == signer"
-        );
-    }
+    // TODO Removed from now, need to reintegrate it for security after POC
+    // function checkSignature(address expectedDelegate, bytes memory signature, bytes memory transferHashData, ISafe safe)
+    //     private
+    //     view
+    // {
+    //     address signer = recoverSignature(signature, transferHashData);
+    //     require(
+    //         expectedDelegate == signer && delegates[address(safe)][uint48(signer)].delegate == signer,
+    //         "expectedDelegate == signer && delegates[address(safe)][uint48(signer)].delegate == signer"
+    //     );
+    // }
 
-    // We use the same format as used for the Safe contract, except that we only support exactly 1 signature and no contract signatures.
-    function recoverSignature(bytes memory signature, bytes memory transferHashData)
-        private
-        view
-        returns (address owner)
-    {
-        // If there is no signature data msg.sender should be used
-        if (signature.length == 0) return msg.sender;
-        // Check that the provided signature data is as long as 1 encoded ecsda signature
-        require(signature.length == 65, "signatures.length == 65");
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-        (v, r, s) = signatureSplit(signature, 0);
-        // If v is 0 then it is a contract signature
-        if (v == 0) {
-            revert("Contract signatures are not supported by this module");
-        } else if (v == 1) {
-            // If v is 1 we also use msg.sender, this is so that we are compatible to the Safe signature scheme
-            owner = msg.sender;
-        } else if (v > 30) {
-            // To support eth_sign and similar we adjust v and hash the transferHashData with the Ethereum message prefix before applying ecrecover
-            owner = ecrecover(
-                keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(transferHashData))),
-                v - 4,
-                r,
-                s
-            );
-        } else {
-            // Use ecrecover with the messageHash for EOA signatures
-            owner = ecrecover(keccak256(transferHashData), v, r, s);
-        }
-        // 0 for the recovered owner indicates that an error happened.
-        require(owner != address(0), "owner != address(0)");
-    }
+    // TODO Removed from now, need to reintegrate it for security after POC
+    // // We use the same format as used for the Safe contract, except that we only support exactly 1 signature and no contract signatures.
+    // function recoverSignature(bytes memory signature, bytes memory transferHashData)
+    //     private
+    //     view
+    //     returns (address owner)
+    // {
+    //     // If there is no signature data msg.sender should be used
+    //     if (signature.length == 0) return msg.sender;
+    //     // Check that the provided signature data is as long as 1 encoded ecsda signature
+    //     require(signature.length == 65, "signatures.length == 65");
+    //     uint8 v;
+    //     bytes32 r;
+    //     bytes32 s;
+    //     (v, r, s) = signatureSplit(signature, 0);
+    //     // If v is 0 then it is a contract signature
+    //     if (v == 0) {
+    //         revert("Contract signatures are not supported by this module");
+    //     } else if (v == 1) {
+    //         // If v is 1 we also use msg.sender, this is so that we are compatible to the Safe signature scheme
+    //         owner = msg.sender;
+    //     } else if (v > 30) {
+    //         // To support eth_sign and similar we adjust v and hash the transferHashData with the Ethereum message prefix before applying ecrecover
+    //         owner = ecrecover(
+    //             keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(transferHashData))),
+    //             v - 4,
+    //             r,
+    //             s
+    //         );
+    //     } else {
+    //         // Use ecrecover with the messageHash for EOA signatures
+    //         owner = ecrecover(keccak256(transferHashData), v, r, s);
+    //     }
+    //     // 0 for the recovered owner indicates that an error happened.
+    //     require(owner != address(0), "owner != address(0)");
+    // }
 
-    function transfer(ISafe safe, address token, address payable to, uint96 amount) private {
-        if (token == address(0)) {
-            // solium-disable-next-line security/no-send
+    uint8 currentChain;
+    mapping(uint8 => address) ccipAddressForChain;
+
+    function transfer(ISafe safe, address token, address payable to, uint96 amount, uint8 chain) private {
+        // if (token == address(0)) {
+        //     // solium-disable-next-line security/no-send
+        //     require(
+        //         safe.execTransactionFromModule(to, amount, "", Enum.Operation.Call), "Could not execute ether transfer"
+        //     );
+        // } else {
+        //     bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", to, amount);
+        //     require(
+        //         safe.execTransactionFromModule(token, 0, data, Enum.Operation.Call), "Could not execute token transfer"
+        //     );
+        // }
+
+        // If we can use CCIP
+        // TODO AND the current chain is CCIP compatible
+        if (ccipAddressForChain[chain] != address(0)) {
+            bytes memory data =
+                abi.encodeWithSignature("depositForBurn(uint256,uint32,bytes32,address)", amount, chain, to, token);
             require(
-                safe.execTransactionFromModule(to, amount, "", Enum.Operation.Call), "Could not execute ether transfer"
+                safe.execTransactionFromModule(ccipAddressForChain[currentChain], 0, data, Enum.Operation.Call),
+                "Could not execute token transfer"
             );
-        } else {
-            bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", to, amount);
-            require(
-                safe.execTransactionFromModule(token, 0, data, Enum.Operation.Call), "Could not execute token transfer"
-            );
+            return;
         }
+
+        // TODO use Chainlink transfer protocol
+
+        // TODO use LayerZero transfer protocol
+
+        // If we can't use CCIP then we can only stay on the same chain and transfer tokens
+        require(chain == currentChain, "can't send from current chain to destination chain");
+
+        bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", to, amount);
+        require(safe.execTransactionFromModule(token, 0, data, Enum.Operation.Call), "Could not execute token transfer");
     }
 
     function getTokens(address safe, address delegate) public view returns (address[] memory) {
