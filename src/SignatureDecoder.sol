@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity >=0.7.0 <0.8.0;
+pragma solidity ^0.8.13;
 
 /// @title SignatureDecoder - Decodes signatures that a encoded as bytes
 /// @author Ricardo Guilherme Schmidt (Status Research & Development GmbH)
@@ -9,11 +9,11 @@ contract SignatureDecoder {
     /// @param messageHash operation ethereum signed message hash
     /// @param messageSignature message `txHash` signature
     /// @param pos which signature to read
-    function recoverKey(
-        bytes32 messageHash,
-        bytes memory messageSignature,
-        uint256 pos
-    ) internal pure returns (address) {
+    function recoverKey(bytes32 messageHash, bytes memory messageSignature, uint256 pos)
+        internal
+        pure
+        returns (address)
+    {
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -25,10 +25,11 @@ contract SignatureDecoder {
     /// @notice Make sure to peform a bounds check for @param pos, to avoid out of bounds access on @param signatures
     /// @param pos which signature to read. A prior bounds check of this parameter should be performed, to avoid out of bounds access
     /// @param signatures concatenated rsv signatures
-    function signatureSplit(
-        bytes memory signatures,
-        uint256 pos
-    ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+    function signatureSplit(bytes memory signatures, uint256 pos)
+        internal
+        pure
+        returns (uint8 v, bytes32 r, bytes32 s)
+    {
         // The signature format is a compact form of:
         //   {bytes32 r}{bytes32 s}{uint8 v}
         // Compact means, uint8 is not padded to 32 bytes.
