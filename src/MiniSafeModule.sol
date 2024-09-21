@@ -1,19 +1,12 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.13;
 
-import "./Enum.sol";
-import "./SignatureDecoder.sol";
+// TODO remove
+import {console} from "forge-std/Test.sol";
 
-interface ISafe {
-    /// @dev Allows a Module to execute a Safe transaction without any further confirmations.
-    /// @param to Destination address of module transaction.
-    /// @param value Ether value of module transaction.
-    /// @param data Data payload of module transaction.
-    /// @param operation Operation type of module transaction.
-    function execTransactionFromModule(address to, uint256 value, bytes calldata data, Enum.Operation operation)
-        external
-        returns (bool success);
-}
+import "./SignatureDecoder.sol";
+import {ISafe} from "@safe/contracts/interfaces/ISafe.sol";
+import {Enum} from "@safe/contracts/libraries/Enum.sol";
 
 // Fork of v0.1.1 of AllowanceModule (https://github.com/safe-global/safe-modules/blob/main/modules/allowances/contracts/AllowanceModule.sol)
 contract MiniSafeModule is SignatureDecoder {
@@ -33,6 +26,11 @@ contract MiniSafeModule is SignatureDecoder {
     // );
 
     address public miniSafeController;
+
+    uint8 cctpCurrentChain;
+    mapping(uint8 => address) cctpAddressForChain;
+
+    mapping(address => bytes32) public addressToTelegramTagHash;
 
     // Safe -> Delegate -> Allowance
     mapping(address => mapping(address => mapping(address => Allowance))) public allowances;
@@ -72,8 +70,23 @@ contract MiniSafeModule is SignatureDecoder {
     event ResetAllowance(address indexed safe, address delegate, address token);
     event DeleteAllowance(address indexed safe, address delegate, address token);
 
-    constructor(address _miniSafeController) {
+    constructor(
+        address _miniSafeController,
+        uint8 _cctpCurrentChain,
+        uint8[] memory _cctpSupportedChains,
+        address[] memory _cctpAddresses
+    ) {
+        require(
+            _cctpSupportedChains.length == _cctpAddresses.length,
+            "cctpSupportedChains and cctpAddresses length don't match"
+        );
+
         miniSafeController = _miniSafeController;
+        cctpCurrentChain = _cctpCurrentChain;
+
+        for (uint256 i = 0; i < _cctpSupportedChains.length; i++) {
+            cctpAddressForChain[_cctpSupportedChains[i]] = _cctpAddresses[i];
+        }
     }
 
     /// @dev Allows to update the allowance for a specified token. This can only be done via a Safe transaction.
@@ -171,6 +184,8 @@ contract MiniSafeModule is SignatureDecoder {
     function executeAllowanceTransfer(ISafe safe, address token, address payable to, uint96 amount, address delegate)
         public
     {
+        console.log("msg.sender", msg.sender);
+        console.log("miniSafeController", miniSafeController);
         require(msg.sender == miniSafeController, "Not authorized"); // Only the minisafe controller can interract here
         require(msg.sender == delegate, "Delegate should be msg.sender"); // Only the minisafe controller can interract here
 
@@ -321,9 +336,6 @@ contract MiniSafeModule is SignatureDecoder {
     //     require(owner != address(0), "owner != address(0)");
     // }
 
-    uint8 currentChain;
-    mapping(uint8 => address) ccipAddressForChain;
-
     function transfer(ISafe safe, address token, address payable to, uint96 amount, uint8 chain) private {
         // if (token == address(0)) {
         //     // solium-disable-next-line security/no-send
@@ -337,13 +349,22 @@ contract MiniSafeModule is SignatureDecoder {
         //     );
         // }
 
-        // If we can use CCIP
-        // TODO AND the current chain is CCIP compatible
-        if (ccipAddressForChain[chain] != address(0)) {
-            bytes memory _data =
+        // If we can use CCTP
+        // TODO AND the current chain is CCTP compatible
+        if (cctpAddressForChain[chain] != address(0)) {
+            // give approval
+            bytes memory approveData =
+                abi.encodeWithSignature("approve(address,uint256)", cctpAddressForChain[cctpCurrentChain], amount);
+            require(
+                safe.execTransactionFromModule(token, 0, approveData, Enum.Operation.Call),
+                "Could not execute token transfer"
+            );
+
+            // trigger CCTP
+            bytes memory cctpData =
                 abi.encodeWithSignature("depositForBurn(uint256,uint32,bytes32,address)", amount, chain, to, token);
             require(
-                safe.execTransactionFromModule(ccipAddressForChain[currentChain], 0, _data, Enum.Operation.Call),
+                safe.execTransactionFromModule(cctpAddressForChain[cctpCurrentChain], 0, cctpData, Enum.Operation.Call),
                 "Could not execute token transfer"
             );
             return;
@@ -353,12 +374,13 @@ contract MiniSafeModule is SignatureDecoder {
 
         // TODO use LayerZero transfer protocol
 
-        // If we can't use CCIP then we can only stay on the same chain and transfer tokens
-        require(chain == currentChain, "can't send from current chain to destination chain");
+        // If we can't use CCTP then we can only stay on the same chain and transfer tokens
+        require(chain == cctpCurrentChain, "can't send from current chain to destination chain");
 
-        bytes memory _data = abi.encodeWithSignature("transfer(address,uint256)", to, amount);
+        bytes memory transferData = abi.encodeWithSignature("transfer(address,uint256)", to, amount);
         require(
-            safe.execTransactionFromModule(token, 0, _data, Enum.Operation.Call), "Could not execute token transfer"
+            safe.execTransactionFromModule(token, 0, transferData, Enum.Operation.Call),
+            "Could not execute token transfer"
         );
     }
 
