@@ -4,8 +4,6 @@
 
 Mini Safe is your friendly team multisig wallet integrated on Telegram for simplifying P2P payments.
 
-
-
 ## Description
 
 Mini Safe is the Revolut Team Business of Web3, where you and your team members can interact with a team multisig wallet directly on Telegram, with a monthly spendable amount (starting at $1,000 for no approval required). We are using Telegram to improve user experience and create mass adoption for multisig wallets, then we want to be secured using a spendable amount.
@@ -13,22 +11,13 @@ Mini Safe is the Revolut Team Business of Web3, where you and your team members 
 > This project has been built during ETHGlobal Singapore. More information [here](https://ethglobal.com/events/singapore2024).
 
 - Watch the demo video and project page here 👉 [video](LINK)
-  
 - Open the live demo here 👉 [video](https://t.me/MiniSafeBot)
-
-
-
 
 ## Mini Telegram App Architecture
 
-
 ![Banner](assets/Workflow.png)
 
-
-
-
 ## Key features
-
 
 1️⃣ Interact with a Telegram bot and a mini Telegram app
 
@@ -50,11 +39,7 @@ Mini Safe is the Revolut Team Business of Web3, where you and your team members 
 
 🔟 Social Recovery
 
-
-
-
 ## What you can do with Mini Safe as a user?
-
 
 As a team member
 
@@ -69,7 +54,14 @@ As an individual
 - Change DeFi position in emergency
 - ETHGlobal staking
 
+## Deployed modules
 
+(testnet)
+
+- Linea: [0x62352FfDadC4081192A0dc9F34DC57A5C9b2D3ee](https://sepolia.lineascan.build/address/0x62352FfDadC4081192A0dc9F34DC57A5C9b2D3ee)
+- Base: [0x62352FfDadC4081192A0dc9F34DC57A5C9b2D3ee](https://sepolia.basescan.org/address/0x62352ffdadc4081192a0dc9f34dc57a5c9b2d3ee)
+
+- Flow: 0x8b6707989467773db58cc10701f33351f4a34697b00ec3e88c007b969cb73c67
 
 ## Contributors
 
