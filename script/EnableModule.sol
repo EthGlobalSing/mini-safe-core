@@ -7,12 +7,16 @@ import {ISafe} from "@safe/contracts/interfaces/ISafe.sol";
 import {Enum} from "@safe/contracts/libraries/Enum.sol";
 
 contract EnableModule is Script {
-    MiniSafeModule miniSafeModule = MiniSafeModule(0xa821877c265906dC0801f80ec540b0665c825E4c);
-
     // MODIFY
+    // address usdc = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // Base
+    address usdc = 0x0E9FE0B4c20eFfbB270d79ce6D18A77280D32C08; // Linea (fake token)
+
+    // ISafe safe = ISafe(0xC931619fDBf6E442548A19cfBe9954306d7ca683); // Base
+    ISafe safe = ISafe(0xC931619fDBf6E442548A19cfBe9954306d7ca683); // Linea Sepolia
+
     address miniSafeModuleController = 0x4f1e8f02982102473fFB53C5F69E2F5Ee584b8D0;
-    ISafe safe = ISafe(0xC931619fDBf6E442548A19cfBe9954306d7ca683);
-    address usdc = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // Base
+    // MiniSafeModule miniSafeModule = MiniSafeModule(0x4BfeB254D4018C8a8E9E7BD7A75994C74060fAD3); // Base
+    MiniSafeModule miniSafeModule = MiniSafeModule(0x4B64746Ed487B0f36B5e913113C3dc5892A1cd5E);
 
     function setUp() public {}
 

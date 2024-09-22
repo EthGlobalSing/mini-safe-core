@@ -352,7 +352,7 @@ contract MiniSafeModule is SignatureDecoder {
 
         // If we can use CCTP
         // TODO AND the current chain is CCTP compatible
-        if (cctpAddressForChain[chain] != address(0)) {
+        if (cctpAddressForChain[chain] != address(0) && chain != cctpCurrentChain) {
             // give approval
             bytes memory approveData =
                 abi.encodeWithSignature("approve(address,uint256)", cctpAddressForChain[cctpCurrentChain], amount);
